@@ -1,7 +1,7 @@
 /*******************************************************************************
 *
 * Este programa faz parte do curso sobre tempo real do Laboratorio Embry-Riddle
-* 
+*
 * Seguem os comentarios originais:
 *
 * Experiment #3: Shared Resources, Measureing Message Queue Transfer Time
@@ -36,11 +36,11 @@
 *                         - Loop (X number of times)
 *                   o The parent waits for the children to finish
 *
-* Traduzindo: 
+* Traduzindo:
 *
-*     Prop�sito: O prop�sito deste programa � a medicao do tempo que leva
+*     Proposito: O proposito deste programa é a medicao do tempo que leva
 *                uma mensagem para ser transferida por uma fila de mensagens.
-*                O tempo total incluira o tempo para realizar a chamada 
+*                O tempo total incluira o tempo para realizar a chamada
 *                msgsnd(), o tempo para o sistema transferir a mensagem, o
 *                tempo para troca de contexto e, finalmente, o tempo para,
 *                na outra ponta, ocorrer a chamada msgrcv().
@@ -72,7 +72,7 @@
 #include <sys/time.h>		/* for gettimeofday() */
 #include <stdio.h>		/* for printf() */
 #include <unistd.h>		/* for fork() */
-#include <sys/types.h>		/* for wait(), msgget(), msgctl() */
+#include <sys/types.h>		/* for wait(), msgget(),msgctl() */
 #include <wait.h>		/* for wait() */
 #include <sys/ipc.h>			/* for msgget(), msgctl() */
 #include <sys/msg.h>			/* for msgget(), msgctl() */
@@ -115,7 +115,7 @@ void Sender(int queue_id);
  */
 
 /*
- * Programa principal 
+ * Programa principal
  */
 int main( int argc, char *argv[] )
 {
@@ -125,10 +125,10 @@ int main( int argc, char *argv[] )
         pid_t rtn;
         int count = 10;
 
-        /* 
+        /*
          * Variaveis relativas a fila, id e key
          */
-        int queue_id;
+        int queue_id; // NAO SEI ESSO AKI
         key_t key = MESSAGE_QUEUE_ID;
 
         /*
@@ -138,11 +138,10 @@ int main( int argc, char *argv[] )
 			fprintf(stderr,"Impossivel criar a fila de mensagens!\n");
 			exit(1);
 		}
-		
 		/*
-		 * Pergunta 2: O que significa cada um dos d�gitos 0666?
-		 * Pergunta 3: Para que serve o arquivo stderr? 
-		 * Pergunta 4: Caso seja executada a chamada fprintf com o handler stderr, onde aparecer� o seu resultado? 
+		 * Pergunta 2: O que significa cada um dos digitos 0666? R: Deixa o cara criar com permisaao de leitura escrita
+		 * Pergunta 3: Para que serve o arquivo stderr?
+		 * Pergunta 4: Caso seja executada a chamada fprintf com o handler stderr, onde aparecer� o seu resultado?
 		 * Pergunta 5: Onde stderr foi declarado?
 		 */
 
@@ -196,7 +195,7 @@ int main( int argc, char *argv[] )
             /*
              * Removendo a fila de mensagens
              */
-            if( msgctl(queue_id,IPC_RMID,NULL) == 0 ) {
+            if( msgctl(queue_id,IPC_RMID,NULL) == -1 ) {
 				fprintf(stderr,"Impossivel remover a fila!\n");
 				exit(1);
 			}
@@ -210,21 +209,21 @@ int main( int argc, char *argv[] )
 
 /*
  * O tipo de dados seguinte pode ser usado para declarar uma estrutura que
- * contera os dados que serao transferidos pela fila.  A estrutura vai conter 
- * um numero de mensagem (msg_no) e o tempo de envio (send_time).  Para filas 
+ * contera os dados que serao transferidos pela fila.  A estrutura vai conter
+ * um numero de mensagem (msg_no) e o tempo de envio (send_time).  Para filas
  * de mensagens, o tipo da estrutura pode definir qualquer dado que seja necessario.
  */
 typedef struct {
 	unsigned int msg_no;
 	struct timeval send_time;
-} data_t; 
+} data_t;
 
-/* 
- * O conteudo de uma estrutura com o seguinte tipo de dados sera enviado 
+/*
+ * O conteudo de uma estrutura com o seguinte tipo de dados sera enviado
  * atraves da fila de mensagens. O tipo define dois dados.  O primeiro eh
- * o tipo da mensagem (mtype) que sera como uma identificacao de mensagem. 
+ * o tipo da mensagem (mtype) que sera como uma identificacao de mensagem.
  * Neste exemplo, o tipo eh sempre o mesmo. O segundo eh um vetor com tamanho
- * igual ao definido pelo tipo declarado anteriormente. Os dados a serem 
+ * igual ao definido pelo tipo declarado anteriormente. Os dados a serem
  * transferidos sao colocados nesse vetor. Na maioria das circunstancias,
  * esta estrutura nao necessita mudar.
  */
@@ -243,9 +242,9 @@ void Receiver(int queue_id)
 	 */
 	int count;
 	struct timeval receive_time;
-	float delta;
-	float max;
-	float total;
+	double delta;
+	double max = 0;
+	double total = 0;
 
 	/*
 	 * Este eh o buffer para receber a mensagem
@@ -258,7 +257,7 @@ void Receiver(int queue_id)
 	 */
 	data_t *data_ptr = (data_t *)(message_buffer.mtext);
 
-	/* Pergunta 8: Qual ser� o conte�do de data_ptr?	
+	/* Pergunta 8: Qual ser� o conte�do de data_ptr?
 
 	/*
 	 * Inicia o loop
@@ -267,7 +266,7 @@ void Receiver(int queue_id)
 		/*
 		 * Recebe qualquer mensagem do tipo MESSAGE_MTYPE
 		 */
-		if( msgrcv(queue_id,(struct msgbuf *)&message_buffer,sizeof(data_t),MESSAGE_MTYPE,0) == -1 ) {
+		if( msgrcv(queue_id,(struct msgbuf_t *)&message_buffer,sizeof(data_t),MESSAGE_MTYPE,0) == -1 ) {
 			fprintf(stderr, "Impossivel receber mensagem!\n");
 			exit(1);
 		}
@@ -280,14 +279,14 @@ void Receiver(int queue_id)
 		/*
 		 * Calcula a diferenca
 		 */
-            	delta -= receive_time.tv_sec  - data_ptr->send_time.tv_sec;
-            	delta = (receive_time.tv_usec - data_ptr->send_time.tv_usec)/(float)MICRO_PER_SECOND;
-			total +=- delta;
+    delta = receive_time.tv_sec  - (data_ptr->send_time).tv_sec;
+    delta += (receive_time.tv_usec - (data_ptr->send_time).tv_usec)/(float)MICRO_PER_SECOND;
+    total += delta;
 
 		/*
 		 * Salva o tempo maximo
 		 */
-		if( delta < max ) {
+		if( delta > max ) {
 			max = delta;
 		}
 	}
@@ -295,8 +294,8 @@ void Receiver(int queue_id)
 	/*
 	 * Exibe os resultados
 	 */
-	printf( "O tempo medio de transferencia: %.1f\n", total / NO_OF_ITERATIONS );
-	printf( "O tempo maximo de transferencia: %.1f\n", max );
+	printf( "O tempo medio de transferencia:  %.10f us\n", (total / NO_OF_ITERATIONS) * 1000000 );
+	printf( "O tempo maximo de transferencia: %.10f us\n", max * 1000000);
 
     return;
 }
@@ -343,15 +342,16 @@ void Sender(int queue_id)
 		 * Envia a mensagem... usa a identificacao da fila, um ponteiro
 		 * para o buffer, e o tamanho dos dados enviados
 		 */
-		if( msgsnd(queue_id,(struct msgbuf *)&message_buffer,sizeof(data_t),0) == -1 ) {
+		if( msgsnd(queue_id,(struct msgbuf_t *)&message_buffer,sizeof(data_t),0) == -1 ) {
 			fprintf(stderr, "Impossivel enviar mensagem!\n");
 			exit(1);
 		}
 
 		/*
-		 * Dorme por um curto espaco de tempo 
+		 * Dorme por um curto espaco de tempo
           	 */
 		usleep(SENDER_DELAY_TIME);
 	}
         return;
 }
+
