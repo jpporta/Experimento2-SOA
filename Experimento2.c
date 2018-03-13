@@ -172,7 +172,7 @@ int main( int argc, char *argv[] )
 			/*
 			 * Sou o primeiro filho me preparando para receber uma mensagem
 			 */
-                printf("Receptor iniciado ...\n");
+                //printf("Receptor iniciado ...\n");
                 Receiver(queue_id);
                 exit(0);
 
@@ -180,7 +180,7 @@ int main( int argc, char *argv[] )
 			/*
                    	 * Sou o segundo filho me preparando para enviar uma mensagem
 			 */
-                printf("Emissor iniciado ...\n");
+                //printf("Emissor iniciado ...\n");
                 Sender(queue_id);
                 exit(0);
 
@@ -188,7 +188,7 @@ int main( int argc, char *argv[] )
 			/*
 			 * Sou o pai aguardando meus filhos terminarem
 			 */
-                  printf("Pai aguardando ...\n");
+                  //printf("Pai aguardando ...\n");
 			  wait(0);
 			  wait(0);
 
@@ -294,8 +294,10 @@ void Receiver(int queue_id)
 	/*
 	 * Exibe os resultados
 	 */
-	printf( "O tempo medio de transferencia:  %.10f us\n", (total / NO_OF_ITERATIONS) * 1000000 );
-	printf( "O tempo maximo de transferencia: %.10f us\n", max * 1000000);
+	// printf( "O tempo medio de transferencia:  %.10f us\n", (total / NO_OF_ITERATIONS) * 1000000 );
+	// printf( "O tempo maximo de transferencia: %.10f us\n", max * 1000000);
+  printf( "%.10f", (total / NO_OF_ITERATIONS) * 1000000 );
+  printf( ",%.10f\n", max * 1000000);
 
     return;
 }
