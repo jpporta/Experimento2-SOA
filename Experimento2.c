@@ -110,27 +110,18 @@
 void Receiver(int queue_id);
 
 void Sender(int queue_id);
-
-/*
- *Variaveis Globais
- */
-
- long tamanho;
-
 /*
  * Pergunta 1: O que eh um prot�tipo? Por qual motivo eh usado?
  */
-
+long tamanho;
 /*
  * Programa principal
  */
-
 int main( int argc, char *argv[] )
 {
         /*
          * Algumas variaveis necessarias
          */
-
         pid_t rtn;
         int count = 10;
 
@@ -140,14 +131,14 @@ int main( int argc, char *argv[] )
         int queue_id; // NAO SEI ESSO AKI
         key_t key = MESSAGE_QUEUE_ID;
 
+        do{
+          printf("%s", "Insira o tamanho da mensagem (0 a 10): ");
+          scanf("%ld", &tamanho);
+        } while(tamanho<0 || tamanho>10);
+        tamanho = tamanho*512;
         /*
          * Cria a fila de mensagens
          */
-
-         printf("Qual eh o tamanho da mensagem?");
-         scanf("%ld", &tamanho);
-         tamanho = tamanho * 512;
-
         if( (queue_id = msgget(key, IPC_CREAT | 0666)) == -1 ) {
 			fprintf(stderr,"Impossivel criar a fila de mensagens!\n");
 			exit(1);
@@ -243,7 +234,7 @@ typedef struct {
  */
 typedef struct {
 	long mtype;
-	char mtext[8192]; // tamanho maximo = 8192 bytes;
+	char mtext[8192];
 } msgbuf_t;
 
 /*
@@ -259,6 +250,7 @@ void Receiver(int queue_id)
 	double delta;
 	double max = 0;
 	double total = 0;
+
 
 	/*
 	 * Este eh o buffer para receber a mensagem
@@ -280,8 +272,7 @@ void Receiver(int queue_id)
 		/*
 		 * Recebe qualquer mensagem do tipo MESSAGE_MTYPE
 		 */
-     usleep(10000);
-
+    usleep(10000); //MELHOR VISUALIZACAO NO WATCH IPCS
 		if( msgrcv(queue_id,(struct msgbuf_t *)&message_buffer,tamanho,MESSAGE_MTYPE,0) == -1 ) {
 			fprintf(stderr, "Impossivel receber mensagem!\n");
 			exit(1);
@@ -354,15 +345,13 @@ void Sender(int queue_id)
 		 */
 		message_buffer.mtype = MESSAGE_MTYPE;
 		data_ptr->msg_no = count;
+    //printf("%d\n", data_ptr->msg_no);
 		data_ptr->send_time = send_time;
 
 		/*
 		 * Envia a mensagem... usa a identificacao da fila, um ponteiro
 		 * para o buffer, e o tamanho dos dados enviados
 		 */
-
-
-
 		if( msgsnd(queue_id,(struct msgbuf_t *)&message_buffer,tamanho,0) == -1 ) {
 			fprintf(stderr, "Impossivel enviar mensagem!\n");
 			exit(1);
