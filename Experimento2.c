@@ -110,6 +110,13 @@
 void Receiver(int queue_id);
 
 void Sender(int queue_id);
+
+/*
+ *Variaveis Globais
+ */
+
+ long tamanho;
+
 /*
  * Pergunta 1: O que eh um prot�tipo? Por qual motivo eh usado?
  */
@@ -117,11 +124,13 @@ void Sender(int queue_id);
 /*
  * Programa principal
  */
+
 int main( int argc, char *argv[] )
 {
         /*
          * Algumas variaveis necessarias
          */
+
         pid_t rtn;
         int count = 10;
 
@@ -134,6 +143,11 @@ int main( int argc, char *argv[] )
         /*
          * Cria a fila de mensagens
          */
+
+         printf("Qual eh o tamanho da mensagem?");
+         scanf("%ld", &tamanho);
+         tamanho = tamanho * 512;
+
         if( (queue_id = msgget(key, IPC_CREAT | 0666)) == -1 ) {
 			fprintf(stderr,"Impossivel criar a fila de mensagens!\n");
 			exit(1);
@@ -229,7 +243,7 @@ typedef struct {
  */
 typedef struct {
 	long mtype;
-	char mtext[sizeof(data_t)];
+	char mtext[8192]; // tamanho maximo = 8192 bytes;
 } msgbuf_t;
 
 /*
@@ -266,7 +280,9 @@ void Receiver(int queue_id)
 		/*
 		 * Recebe qualquer mensagem do tipo MESSAGE_MTYPE
 		 */
-		if( msgrcv(queue_id,(struct msgbuf_t *)&message_buffer,sizeof(data_t),MESSAGE_MTYPE,0) == -1 ) {
+     usleep(10000);
+
+		if( msgrcv(queue_id,(struct msgbuf_t *)&message_buffer,tamanho,MESSAGE_MTYPE,0) == -1 ) {
 			fprintf(stderr, "Impossivel receber mensagem!\n");
 			exit(1);
 		}
@@ -344,7 +360,10 @@ void Sender(int queue_id)
 		 * Envia a mensagem... usa a identificacao da fila, um ponteiro
 		 * para o buffer, e o tamanho dos dados enviados
 		 */
-		if( msgsnd(queue_id,(struct msgbuf_t *)&message_buffer,sizeof(data_t),0) == -1 ) {
+
+
+
+		if( msgsnd(queue_id,(struct msgbuf_t *)&message_buffer,tamanho,0) == -1 ) {
 			fprintf(stderr, "Impossivel enviar mensagem!\n");
 			exit(1);
 		}
@@ -356,4 +375,3 @@ void Sender(int queue_id)
 	}
         return;
 }
-
