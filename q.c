@@ -109,9 +109,9 @@
 /*
  * Filhos
  */
-void Receiver1(int key1, int key2);
-void Receiver2(int key2);
-void Sender(int key1);
+void Receiver1(int queue_idREC, int queue_idENV);
+void Receiver2(int queue_idREC);
+void Sender(int queue_idENV);
 /*
  * Pergunta 1: O que eh um prot�tipo? Por qual motivo eh usado?
  */
@@ -133,6 +133,9 @@ int main( int argc, char *argv[] )
         int queue_id; // NAO SEI ESSO AKI
         key_t key1 = MESSAGE_QUEUE_ID1;
         key_t key2 = MESSAGE_QUEUE_ID2;
+
+        int queue_idREC;
+        int queue_idENV;
 
         do {
                 printf("%s", "Insira o tamanho da mensagem (0 a 10): ");
@@ -168,30 +171,30 @@ int main( int argc, char *argv[] )
          * OBS:  o valor de count no loop anterior indicara cada um dos filhos
          *       count = 1 para o primeiro filho, 2 para o segundo, etc.
          */
-        if( rtn == 0 && count == 1 ) {
+        if( rtn == 0 ) {
+            if( (queue_idREC = msgget(key1, IPC_CREAT | 0666)) == -1 ) {
+                fprintf(stderr,"Impossivel criar a fila de mensagens!\n");
+                exit(1);
+            }
+            if( (queue_idENV = msgget(key2, IPC_CREAT | 0666)) == -1 ) {
+                fprintf(stderr,"Impossivel criar a fila de mensagens!\n");
+                exit(1);
+            }
 
-                /*
-                 * Sou o primeiro filho me preparando para receber e enviar uma mensagem
-                 */
-                //printf("Receptor iniciado ...\n");
-                Receiver1(key1, key2);
+            if(count == 1){
+                Receiver1(queue_idREC, queue_idENV);
                 exit(0);
-
-        } else if( rtn == 0 && count == 2 ) {
-                /*
-                 * Sou o segundo filho me preparando para enviar uma mensagem
-                 */
-                //printf("Emissor iniciado ...\n");
-                Sender(key1);
+            }
+            if(count == 2){
+                Sender(queue_idREC);
                 exit(0);
-
-        } else if (rtn == 0 && count == 3) {
-                /*
-                   Sou o terceiro filho me preparando para receber uma mensagem
-                 */
-                Receiver2(key2);
+            }
+            if(count == 3){
+                Receiver2(queue_idENV);
                 exit(0);
+            }
         }
+
         else
         {
                 /*
@@ -204,7 +207,11 @@ int main( int argc, char *argv[] )
                 /*
                  * Removendo a fila de mensagens
                  */
-                if( msgctl(queue_id,IPC_RMID,NULL) == -1 ) {
+                if( msgctl(queue_idREC,IPC_RMID,NULL) == -1 ) {
+                        fprintf(stderr,"Impossivel remover a fila!\n");
+                        exit(1);
+                }
+                if( msgctl(queue_idENV,IPC_RMID,NULL) == -1 ) {
                         fprintf(stderr,"Impossivel remover a fila!\n");
                         exit(1);
                 }
@@ -250,20 +257,15 @@ typedef struct {
 /*
  * Esta funcao executa o recebimento das mensagens
  */
-void Receiver2(int key2)
+void Receiver2(int queue_idREC)
 {
         msgbuf_t message_buffer;
-        int queue_idREC;
-        int count;
 
-        if( (queue_idREC = msgget(key2, IPC_CREAT | 0666)) == -1 ) {
-                fprintf(stderr,"Impossivel criar a fila de mensagens!\n");
-                exit(1);
-        }
+        int count;
 
         data_t2 *data_ptrENV = (data_t2 *)(message_buffer.mtext);
         for( count = 0; count < NO_OF_ITERATIONS; ++count ) {
-
+            usleep(10000);
             if( msgrcv(queue_idREC,(struct msgbuf_t *)&message_buffer,tamanho,MESSAGE_MTYPE,0) == -1 ) {
                     fprintf(stderr, "Impossivel receber mensagem!\n");
                     exit(1);
@@ -274,7 +276,7 @@ void Receiver2(int key2)
         }
 
 }
-void Receiver1(int key1, int key2)
+void Receiver1(int queue_idREC, int queue_idENV)
 {
         /*
          * Variaveis locais
@@ -285,27 +287,16 @@ void Receiver1(int key1, int key2)
         double max = 0;
         double total = 0;
         double min = INFINITY;
-        int queue_idREC;
-        int queue_idENV;
 
         msgbuf_t message_bufferREC;
         msgbuf_t message_bufferENV;
-
-        if( (queue_idREC = msgget(key1, IPC_CREAT | 0666)) == -1 ) {
-                fprintf(stderr,"Impossivel criar a fila de mensagens!\n");
-                exit(1);
-        }
-        if( (queue_idENV = msgget(key2, IPC_CREAT | 0666)) == -1 ) {
-                fprintf(stderr,"Impossivel criar a fila de mensagens!\n");
-                exit(1);
-        }
 
         data_t1 *data_ptrREC = (data_t1 *)(message_bufferREC.mtext);
         data_t2 *data_ptrENV = (data_t2 *)(message_bufferENV.mtext);
 
         for( count = 0; count < NO_OF_ITERATIONS; ++count ) {
 
-                //usleep(10000); //MELHOR VISUALIZACAO NO WATCH IPCS
+                usleep(10000); //MELHOR VISUALIZACAO NO WATCH IPCS
                 if( msgrcv(queue_idREC,(struct msgbuf_t *)&message_bufferREC,tamanho,MESSAGE_MTYPE,0) == -1 ) {
                         fprintf(stderr, "Impossivel receber mensagem!\n");
                         exit(1);
@@ -341,21 +332,15 @@ void Receiver1(int key1, int key2)
 /*
  * Esta funcao envia mensagens
  */
-void Sender(int key1)
+void Sender(int queue_idENV)
 {
-        int queue_idENV;
+        //int queue_idENV;
         int count;
         struct timeval send_time;
 
         msgbuf_t message_buffer;
 
         data_t1 *data_ptr = (data_t1 *)(message_buffer.mtext);
-
-        /* Criação dos bufferes pelo Sender */
-        if( (queue_idENV = msgget(key1, IPC_CREAT | 0666)) == -1 ) {
-                fprintf(stderr,"Impossivel criar a fila de mensagens!\n");
-                exit(1);
-        }
 
         /*
          * Inicia o loop
